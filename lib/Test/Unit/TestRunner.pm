@@ -59,15 +59,15 @@ sub do_run {
     my $end_time = new Benchmark();
     my $run_time = timediff($end_time, $start_time);
     $self->_print("\n", "Time: ", timestr($run_time), "\n");
-
+    
     $self->print_result($result);
     
     if ($wait) {
-	print "<RETURN> to continue"; # go to STDIN any case
-	<STDIN>;
+        print "<RETURN> to continue"; # go to STDIN any case
+        <STDIN>;
     }
     if (not $result->was_successful()) {
-	die "\nTest was not successful.\n";
+        die "\nTest was not successful.\n";
     }
     return 0;
 }
@@ -94,17 +94,17 @@ sub print_result {
 sub print_errors {
     my $self = shift;
     my ($result) = @_;
-    if ($result->error_count() != 0) {
-	if ($result->error_count == 1) {
-	    $self->_print("There was ", $result->error_count(), " error:\n");
-	} else {
-	    $self->_print("There were ", $result->error_count(), " errors:\n");
-	}
-	my $i = 0; 
-	for my $e (@{$result->errors()}) {
-	    $i++;
-	    $self->_print($i, ") ", $e->to_string());
-	}
+    if ( $result->error_count() ) {
+        if ($result->error_count == 1) {
+            $self->_print("There was ",  $result->error_count(), " error:\n" );
+        } else {
+            $self->_print("There were ", $result->error_count(), " errors:\n");
+        }
+        my $i = 0; 
+        for my $e (@{$result->errors()}) {
+            $i++;
+            $self->_print($i, ") ", $e->to_string());
+        }
     }
 }
 
@@ -208,7 +208,7 @@ __END__
 
 =head1 NAME
 
-    Test::Unit::TestRunner - unit testing framework helper class
+Test::Unit::TestRunner - unit testing framework helper class
 
 =head1 SYNOPSIS
 
@@ -219,42 +219,73 @@ __END__
 
 =head1 DESCRIPTION
 
-    This class is the test runner for the command line style use
-    of the testing framework.
+This class is the test runner for the command line style use
+of the testing framework.
 
-    It is used by simple command line tools like the TestRunner.pl
-    script provided.
+It is used by simple command line tools like the F<TestRunner.pl>
+script provided.
 
-    The class needs one argument, which is the name of the class
-    encapsulating the tests to be run.
-    
-    Options:
-	-wait : wait for user confirmation between tests
-	-v    : Version info
+The class needs one argument, which is the name of the class
+encapsulating the tests to be run.
+
+=head1 OPTIONS
+
+=over 4
+
+=item -wait
+
+wait for user confirmation between tests
+
+=item -v
+
+version info
+
+=back
+
 
 =head1 AUTHOR
 
-    Framework JUnit authored by Kent Beck and Erich Gamma.
+Framework JUnit authored by Kent Beck and Erich Gamma.
 
-    Ported from Java to Perl by Christian Lemburg.
+Ported from Java to Perl by Christian Lemburg.
 
-    Copyright (c) 2000 Christian Lemburg, <lemburg@acm.org>.
+Copyright (c) 2000 Christian Lemburg, E<lt>lemburg@acm.orgE<gt>.
 
-    All rights reserved. This program is free software; you can
-    redistribute it and/or modify it under the same terms as
-    Perl itself.
+All rights reserved. This program is free software; you can
+redistribute it and/or modify it under the same terms as Perl itself.
 
-    Thanks go to the other PerlUnit framework people: 
-    Brian Ewins, Cayte Lindner, J.E. Fritz, Zhon Johansen.
+Thanks go to the other PerlUnit framework people: 
+Brian Ewins, Cayte Lindner, J.E. Fritz, Zhon Johansen.
 
 =head1 SEE ALSO
 
-    - Test::Unit::TestCase
-    - Test::Unit::TestListener
-    - Test::Unit::TestSuite
-    - Test::Unit::TestResult
-    - Test::Unit::TkTestRunner
-    - For further examples, take a look at the framework self test 
-      collection (Test::Unit::tests::AllTests).
+=over 4
+
+=item *
+
+L<Test::Unit::TestCase>
+
+=item *
+
+L<Test::Unit::TestListener>
+
+=item *
+
+L<Test::Unit::TestSuite>
+
+=item *
+
+L<Test::Unit::TestResult>
+
+=item *
+
+L<Test::Unit::TkTestRunner>
+
+=item *
+
+For further examples, take a look at the framework self test
+collection (Test::Unit::tests::AllTests).
+
+=back
 
 =cut
