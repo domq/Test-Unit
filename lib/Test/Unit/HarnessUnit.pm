@@ -2,12 +2,11 @@ package Test::Unit::HarnessUnit;
 # this is a test runner which outputs in the same
 # format that Test::Harness expects. 
 use strict;
-use constant DEBUG => 0;
 
-use base qw(Test::Unit::TestListener); 
+use base qw(Test::Unit::Runner); 
 
 use Test::Unit::TestSuite;
-use Test::Unit::TestResult;
+use Test::Unit::Loader;
 
 sub new {
     my $class = shift;
@@ -26,8 +25,7 @@ sub print_stream {
 sub _print {
     my $self = shift;
     my (@args) = @_;
-    local *FH = *{$self->print_stream()};
-    print FH @args;
+    $self->{_Print_stream}->print( @args);
 }
 
 sub start_test {
@@ -38,11 +36,9 @@ sub start_test {
 sub not_ok {
     my $self = shift;
     my ($test, $exception) = @_;
-    $self->_print("\nnot ok ERROR "
-		  . $test->name()
-		  . "\n"
-		  . $exception->to_string()
-		  . "\n");
+    $self->_print("\nnot ok ERROR ",
+                  $test->name(),
+                  "\n$exception\n");
 }
 
 sub ok {
@@ -71,30 +67,17 @@ sub end_test {
     my ($test) = @_;
 }
 
-sub create_test_result {
-    my $self = shift;
-    return Test::Unit::TestResult->new();
-}
-	
 sub do_run {
-    my $self = shift;
+    my $self    = shift;
     my ($suite) = @_;
-    my $result = $self->create_test_result();
-    my $count=$suite->count_test_cases();
+    my $result  = $self->create_test_result();
     $result->add_listener($self);
-    $suite->run($result);
-}
-
-sub this_package {
-  # trick cycling. I need the name of the current package,
-  # not the calling package, in some of the static methods.
-  # If this were java it would be a private static method.
-  return (caller())[0];
+    $suite->run($result, $self);
 }
 
 sub main {
     my $self = shift;
-    my $a_test_runner = this_package()->new();
+    my $a_test_runner = __PACKAGE__->new;
     $a_test_runner->start(@_);
 }
 
@@ -110,20 +93,20 @@ sub run {
 }
 
 sub start {
-    my $self = shift;
-    my (@args) = @_;
+    my $self      = shift;
+    my (@args)    = @_;
 
     my $test_case = "";
-    my $wait = 0;
-    my $suite=Test::Unit::TestLoader::load(@args);
+    my $wait      = 0;
+    my $suite     = Test::Unit::Loader::load(@args);
     if ($suite) {
-	my $count=$suite->count_test_cases();
-	$self->_print("\nSTARTING TEST RUN\n1..$count\n");
-	$self->do_run($suite);
-	exit(0);
+        my $count=$suite->count_test_cases();
+        $self->_print("STARTING TEST RUN\n1..$count\n");
+        $self->do_run($suite);
+        exit(0);
     } else {
-	$self->_print("Invalid argument to test runner: $args[0]\n");
-	exit(1);
+        $self->_print("Invalid argument to test runner: $args[0]\n");
+        exit(1);
     }
 }
 

@@ -4,80 +4,37 @@
 
 We were wondering how we should go about keeping track of the
 consensuses (sp?) we reached on the perlunit-devel mailing list.
-
 Matthew was all for a cumbersome set of tags so we could grep the list
-for "points".
+for "points".  Christian suggested a simple text file in CVS which we
+modify as appropriate.  This is a compromise - a simple text file
+marked up for use with emacs' "outline-mode".  Most of the active
+developers use emacs.
 
-Christian suggested a simple text file in CVS which we modify as
-appropriate.
+Issues currently being discussed on the list can be kept track of here
+by listing any suggestions made or conclusions which were reached.
+Once it's decided what needs to be done, the details should be moved
+to doc/TODO and someone will get on with implementing them.
 
-This is a compromise - a simple text file marked up for use with
-emacs' "outline-mode". I chose this because I know that at least 2/4
-active developers use emacs. Open to other suggestions of course.
-
-				-- MCA 27/2/2001
+Please only update this file on the main branch!
 
 ** Links back to the mailing list
 
 Might be handy for those with local archives, but dropping message-ids
 in this file will make a mess IMHO  -- mca
 
-* Test::Unit::Assert::assert()
+* Coding conventions
 
+If in doubt, conform to the style shown in the existing code.
 
-What is Test::Unit::Assert for? -- pdc
+** use vs. require
 
-** assert_eq(this, that, message) and other comparison routines
+After a discussion on perlunit-devel in March 2001, subject 'Towards
+sensible failure messages', we settled on use rather than require, except
+where we only want to load a module if we need it, of course.
 
-PerlUnit doesn't include these because the user should be left to
-decide for s/himself whether to use == or eq .
+** whitespace
 
-For the same reason we suggest users should roll their own structure
-comparison routines or use FreezeThaw::cmpStr()
-
-Having said this, we don't have concrete examples of Bad Things
-happening, as Adam pointed out. Please add examples below...
-
-[PDC: With coderefs, it becomes:
-
-    assert( sub {($_[0] eq $_[1]) || die "Expected '$_[0]', got '$_[1]'"},
-	   $expected, $got );
-
-There's nothing to stop us having a utility Test::Unit::CodeRef class method
-that'd return an appropriate anon subroutine:
-
-    assert(Test::Unit::Coderef->assert_eq, $expect, $got);
-
-    assert(Test::Unit::Coderef->assert_numeric, $expect, $got);
-
-Just a talking point.]
-
-** assert_regexp(string, qr/regexp/, message)
-
-Seems like a good idea, not yet committed
-
-[PDC: Changed this slightly by reifying the first argument to
-Test::Unit::Assert::assert into an 'assertion' object. If the first argument
-is a regular expression (using hte qr/.../ method) then it becomes a
-Test::Unit::Assertion::Regexp, which compares against the second argument and
-returns a default error message.
-
-Nothing to stop us extending this to take a possible different message as the
-last argument and use that as the message instead of the default.]
-
-** coderef_assert($cr, $self);
-
-Code that returns true for success and dies with an exception if it
-needs to make leave a message.
-
-This and other (blessed) objects get their 'do_assert' method called.
-
-See the 'pdc_coderefassert' branch of CVS.
-
-[PDC: No longer using the 'coderef_assert' method. This functionality is now
-rolled into the standard 'assert' method. If the first argument is a CODE
-reference, it becomes a Test::Unit::CodeRef assertion and gets all sorts of
-canny error reporting associated with it...]
+No hard tabs, 4 column indent level.  
 
 * Auto-adding tests, Test::Unit::TestSuite->new()
 
@@ -173,86 +130,8 @@ the best practice. See the discussion in Damian Conway's Object Oriented Perl.
    -- pdc
 
 * TODO lists
-** Matthew
-*** Consider removing examples/tester* (uses old Test::SuiteWrapper)
-*** Make Debian package
-*** Find a neat way to run unit-tested programs without the suite
-It's convenient for medium sized projects to stick the test subs in
-the classes they test, but then you have a run-time dependence on perlunit.
 
-* Tests to add
-
-** PerlUnit selftests, Test::Unit::tests
-
-*** die errors that look like variable names  [mca]
-
-A test that fails with an error like
-
-  die '$lotsofdollars';
-
-and make sure it gets wrapped into an ExceptionError
-
-*** doing the right OOP thing in constructors and isa() checks
-
-Possibly a test that overrides the 'isa' method so Piers' fix to my
-patch
-
-  (back to using $exception->isa(C) instead of UNIVERSAL::isa($exception,C))
-
-can be exercised.
-
-Also Adam has patched some of the PerlUnit constructors to allow
-passing a classname instead of being invoked as a method.
-
-** Generic tests for users to include
-
-Matthew wrote some. Whether anyone else wants them remains to be seen.
-
-The potentially useful ones:
-
-*** test_SubsAllNeedTests
-
-Checks all subs in a module are tested. Take the code and put it
-somewhere else.
-
-*** test_PodChecker
-
-Look the sourcecode up in %INC and run it through the Pod::Checker
-(which spits out stuff to STDOUT regardless).
-
-*** test_HaveWarnings
-
-Check $^W .. a bit cheeky. I was actually after a check for
-strictness, after forgetting to use it in some module I broke off, but
-this is either tricky or impossible.
-
-[Impossible I believe. That's kind of the point of lexical scope after all
-   -- pdc]
-
-** Test coverage tests
-
-There was a big thread on this but it's someone else's turn to write
-about that. 8-)  -- mca
-
-Current thinking is to keep test-coverage tests away from the executed
-tests, mainly so you can have a script which draws a pretty chart of
-how well your code is tested. Adam has some code for this.
-
-* Keeping state
-
-It's not nice but we're doing it already, in an untidy way.
-
-Likely uses are 
-
- - backtrace quelledness (this goes away when we bin the backtrace)
- - (some) debug handlers
- - tagging tests (eg. "slow") for selective execution
-
-It should be stored per-run (in the Listener) not per suite or
-testcase.
-
-I think it should be locally modifiable otherwise it's too inflexible.
-
+Moved to doc/TODO.
 
 * Packaging
 

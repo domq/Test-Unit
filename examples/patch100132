@@ -1,7 +1,9 @@
-use lib '../../lib';
+#!/usr/bin/perl -w
+
+use strict;
 
 use Experimental::Sample;
-use Test::Unit;
+use Test::Unit::Procedural;
 
 use constant DEBUG => 0;
 
@@ -35,4 +37,5 @@ sub tear_down {
 
 
 create_suite( 'Experimental::Sample' );
+create_suite;
 run_suite();

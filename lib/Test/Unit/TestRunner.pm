@@ -1,11 +1,12 @@
 package Test::Unit::TestRunner;
 use strict;
-use constant DEBUG => 0;
 
-use base qw(Test::Unit::TestListener); 
+use base qw(Test::Unit::Runner); 
 
+use Test::Unit; # for the version number
 use Test::Unit::TestSuite;
-use Test::Unit::TestResult;
+use Test::Unit::Loader;
+use Test::Unit::Result;
 
 use Benchmark;
 
@@ -13,6 +14,7 @@ sub new {
     my $class = shift;
     my ($filehandle) = @_;
     $filehandle = \*STDOUT unless $filehandle;
+    select((select($filehandle), $| = 1)[0]);
     bless { _Print_stream => $filehandle }, $class;
 }
 
@@ -24,8 +26,7 @@ sub print_stream {
 sub _print {
     my $self = shift;
     my (@args) = @_;
-    local *FH = *{$self->print_stream()};
-    print FH @args;
+    $self->print_stream->print(@args);
 }
 
 sub add_error {
@@ -44,37 +45,26 @@ sub add_pass {
     # in this runner passes are ignored.
 }
 
-sub create_test_result {
-    my $self = shift;
-    return Test::Unit::TestResult->new();
-}
-	
 sub do_run {
     my $self = shift;
     my ($suite, $wait) = @_;
     my $result = $self->create_test_result();
     $result->add_listener($self);
     my $start_time = new Benchmark();
-    $suite->run($result);
+    $suite->run($result, $self);
     my $end_time = new Benchmark();
-    my $run_time = timediff($end_time, $start_time);
-    $self->_print("\n", "Time: ", timestr($run_time), "\n");
     
-    $self->print_result($result);
+    $self->print_result($result, $start_time, $end_time);
     
     if ($wait) {
         print "<RETURN> to continue"; # go to STDIN any case
         <STDIN>;
     }
-    if (not $result->was_successful()) {
-        die "\nTest was not successful.\n";
-    }
+    die "\nTest was not successful.\n" unless $result->was_successful;
     return 0;
 }
 
 sub end_test {
-    my $self = shift;
-    my ($test) = @_;
 }
 
 sub main {
@@ -85,7 +75,11 @@ sub main {
 
 sub print_result {
     my $self = shift;
-    my ($result) = @_;
+    my ($result, $start_time, $end_time) = @_;
+
+    my $run_time = timediff($end_time, $start_time);
+    $self->_print("\n", "Time: ", timestr($run_time), "\n");
+
     $self->print_header($result);
     $self->print_errors($result);
     $self->print_failures($result);
@@ -94,34 +88,42 @@ sub print_result {
 sub print_errors {
     my $self = shift;
     my ($result) = @_;
-    if ( $result->error_count() ) {
-        if ($result->error_count == 1) {
-            $self->_print("There was ",  $result->error_count(), " error:\n" );
-        } else {
-            $self->_print("There were ", $result->error_count(), " errors:\n");
-        }
-        my $i = 0; 
-        for my $e (@{$result->errors()}) {
-            $i++;
-            $self->_print($i, ") ", $e->to_string());
-        }
+    return unless my $error_count = $result->error_count();
+    my $msg = "\nThere " .
+              ($error_count == 1 ?
+                "was 1 error"
+              : "were $error_count errors") .
+              ":\n";
+    $self->_print($msg);
+
+    my $i = 0;
+    for my $e (@{$result->errors()}) {
+        chomp(my $e_to_str = $e);
+        $i++;
+        $self->_print("$i) $e_to_str\n");
+        $self->_print("\nAnnotations:\n", $e->object->annotations())
+          if $e->object->annotations();
     }
 }
 
 sub print_failures {
     my $self = shift;
     my ($result) = @_;
-    if ($result->failure_count() != 0) {
-	if ($result->failure_count == 1) {
-	    $self->_print("There was ", $result->failure_count(), " failure:\n");
-	} else {
-	    $self->_print("There were ", $result->failure_count(), " failures:\n");
-	}
-	my $i = 0; 
-	for my $e (@{$result->failures()}) {
-	    $i++;
-	    $self->_print($i, ") ", $e->to_string());
-	}
+    return unless my $failure_count = $result->failure_count;
+    my $msg = "\nThere " .
+              ($failure_count == 1 ?
+                "was 1 failure"
+              : "were $failure_count failures") .
+              ":\n";
+    $self->_print($msg);
+
+    my $i = 0; 
+    for my $f (@{$result->failures()}) {
+        chomp(my $f_to_str = $f);
+        $self->_print("\n") if $i++;
+        $self->_print("$i) $f_to_str\n");
+        $self->_print("\nAnnotations:\n", $f->object->annotations())
+          if $f->object->annotations();
     }
 }
 
@@ -129,14 +131,14 @@ sub print_header {
     my $self = shift;
     my ($result) = @_;
     if ($result->was_successful()) {
-	$self->_print("\n", "OK", " (", $result->run_count(), " tests)");
+        $self->_print("\n", "OK", " (", $result->run_count(), " tests)\n");
     } else {
-	$self->_print("\n", "!!!FAILURES!!!", "\n",
-		      "Test Results:\n",
-		      "Run: ", $result->run_count(), 
-		      " Failures: ", $result->failure_count(),
-		      " Errors: ", $result->error_count(),
-		      "\n");
+        $self->_print("\n", "!!!FAILURES!!!", "\n",
+                      "Test Results:\n",
+                      "Run: ", $result->run_count(), 
+                      ", Failures: ", $result->failure_count(),
+                      ", Errors: ", $result->error_count(),
+                      "\n");
     }
 }
 
@@ -144,55 +146,40 @@ sub run {
     my $self = shift;
     my ($class) = @_;
     my $a_test_runner = Test::Unit::TestRunner->new();
-    if ($class->isa("Test::Unit::Test")) {
-	$a_test_runner->do_run($class, 0);
-    } else {
-	$a_test_runner->do_run(Test::Unit::TestSuite->new($class), 0);
-    }
+    $a_test_runner->do_run(Test::Unit::TestSuite->new($class), 0);
 }
 	
 sub run_and_wait {
     my $self = shift;
     my ($test) = @_;
     my $a_test_runner = Test::Unit::TestRunner->new();
-    $a_test_runner->do_run($test, 1);
+    $a_test_runner->do_run(Test::Unit::TestSuite->new($test), 1);
 }
 
 sub start {
     my $self = shift;
     my (@args) = @_;
 
-    my $test_case = "";
+    my $test = "";
     my $wait = 0;
 
     for (my $i = 0; $i < @args; $i++) {
-	if ($args[$i] eq "-wait") {
-	    $wait = 1;
-	} elsif ($args[$i] eq "-v") {
-	    print "Test::Unit Version 0.1 experimental, copyright Christian Lemburg, Brian Ewins, J.E. Fritz, Cayte Lindner, Zhon Johansen, 2000\n";
-	} else {
-	    $test_case = $args[$i];
-	}
+        if ($args[$i] eq "-wait") {
+            $wait = 1;
+        } elsif ($args[$i] eq "-v") {
+            print <<EOF;
+Test::Unit Version $Test::Unit::VERSION
+(c) 2000 Christian Lemburg, Brian Ewins, J.E. Fritz, Cayte Lindner, Zhon Johansen
+EOF
+        } else {
+            $test = $args[$i];
+        }
     }
-    if ($test_case eq "") {
-	die "Usage TestRunner.pl [-wait] name, where name is the name of the TestCase class", "\n";
+    if ($test eq "") {
+        die "Usage: TestRunner.pl [-wait] name, where name is the name of the Test class\n";
     }
-
-    eval "require $test_case" 
-	or die "Suite class " . $test_case . " not found: $@";
-    no strict 'refs';
-    my $suite;
-    my $suite_method = $test_case->can("suite") ? 
-	    \&{"$test_case" . "::" . "suite"} : undef; 
-    if (not $suite_method) {
-	$suite = Test::Unit::TestSuite->new($test_case);
-    }
-    if (not $suite) {
-	eval {
-	    $suite = $suite_method->();
-	};
-	die "Could not invoke the suite() method: $@" if $@;
-    }
+    
+    my $suite = Test::Unit::Loader::load($test);
     $self->do_run($suite, $wait);
 }
 
@@ -215,7 +202,7 @@ Test::Unit::TestRunner - unit testing framework helper class
     use Test::Unit::TestRunner;
 
     my $testrunner = Test::Unit::TestRunner->new();
-    $testrunner->start($my_testcase_class);
+    $testrunner->start($my_test_class);
 
 =head1 DESCRIPTION
 
@@ -267,7 +254,7 @@ L<Test::Unit::TestCase>
 
 =item *
 
-L<Test::Unit::TestListener>
+L<Test::Unit::Listener>
 
 =item *
 
@@ -275,7 +262,7 @@ L<Test::Unit::TestSuite>
 
 =item *
 
-L<Test::Unit::TestResult>
+L<Test::Unit::Result>
 
 =item *
 
@@ -284,7 +271,7 @@ L<Test::Unit::TkTestRunner>
 =item *
 
 For further examples, take a look at the framework self test
-collection (Test::Unit::tests::AllTests).
+collection (t::tlib::AllTests).
 
 =back
 

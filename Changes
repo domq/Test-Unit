@@ -1,3 +1,9 @@
+******************************************************************************
+* Due to lack of time, this file has been deprecated in favour of the
+* automatically generated ChangeLog file.  Sorry.
+******************************************************************************
+
+
 Revision history for Perl extension Test::Unit.
 
 0.14    - lots of changes and additions:
@@ -9,7 +15,7 @@ Revision history for Perl extension Test::Unit.
 	  Matthew Astley and Adam Spiers fixed a number of smaller things.
 	  Greatly improved formatting of failure reports.
 	  Version number is now (hopefully) handled correctly for CPAN.
-	  Kevin Connor ported TestSetup and TestDecorator to Perl.
+	  Kevin Connor ported Setup and TestDecorator to Perl.
 
 0.13    - patched the patch from 0.12, added patches by David Esposito,
           (documentation for optional message arg to assert(), make
