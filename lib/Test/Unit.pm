@@ -12,8 +12,6 @@ require Exporter;
 
 @EXPORT = qw(assert create_suite run_suite add_suite);
 
-$VERSION = '0.10';
-
 # private
 
 my $test_suite = Test::Unit::TestSuite->empty_new("Test::Unit");
@@ -30,7 +28,7 @@ sub add_to_suites {
 
 # public
 
-sub assert {
+sub assert ($;$) {
     my ($condition, $message) = @_;
     my $asserter = caller();
     add_to_suites($asserter);
@@ -115,8 +113,8 @@ __END__
 
     # define tests
 
-    sub test_foo { assert(foo() == 23); }	
-    sub test_bar { assert(bar() == 42); }
+    sub test_foo { assert(foo() == 23, "Your message here"); }	
+    sub test_bar { assert(bar() == 42, "I will be printed if this fails"); }
 
     # set_up and tear_down are used to
     # prepare and release resources need for testing
@@ -182,7 +180,7 @@ __END__
     Brian Ewins, Cayte Lindner, J.E. Fritz, Zhon Johansen.
 
     Thanks for patches go to:
-    Matthew Astley.
+    Matthew Astley, David Esposito.
 
 =head1 SEE ALSO
 
