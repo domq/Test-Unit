@@ -259,6 +259,8 @@ sub run {
     my $self = shift;
     my ($result, $runner) = @_;
 
+    debug("$self\::run($result, ", $runner || 'undef', ") called\n");
+
     $result ||= create_result();
     $result->tell_listeners(start_suite => $self);
 
@@ -267,12 +269,13 @@ sub run {
 
     for my $t (@{$self->tests()}) {
         if ($runner && $self->filter_test($runner, $t)) {
-            debug(sprintf "skipping %s\n", $t->name());
+            debug(sprintf "+ skipping '%s'\n", $t->name());
             next;
         }
+        debug(sprintf "+ didn't skip '%s'\n", $t->name());
  
         last if $result->should_stop();
-        $t->run($result);
+        $t->run($result, $runner);
     }
 
     $result->tell_listeners(end_suite => $self);
@@ -283,11 +286,15 @@ sub run {
 sub filter_test {
     my $self = shift;
     my ($runner, $test) = @_;
+
+    debug(sprintf "checking whether to filter '%s'\n", $test->name);
+
     my @filter_tokens = $runner->filter();
 
     foreach my $token (@filter_tokens) {
-        return 1 if $test->filter_method($token, $test->name())
-                 || $test->filter_method($token, 'ALL');
+        my $filtered = $test->filter_method($token);
+        debug("  - by token $token? ", $filtered ? 'yes' : 'no', "\n");
+        return 1 if $filtered;
     }
 
     return 0;
@@ -322,20 +329,14 @@ sub add_warning {
 1;
 __END__
 
-
 =head1 AUTHOR
 
-Framework JUnit authored by Kent Beck and Erich Gamma.
-
-Ported from Java to Perl by Christian Lemburg.
-
-Copyright (c) 2000 Christian Lemburg, E<lt>lemburg@acm.orgE<gt>.
+Copyright (c) 2000-2002, 2005 the PerlUnit Development Team
+(see L<Test::Unit> or the F<AUTHORS> file included in this
+distribution).
 
 All rights reserved. This program is free software; you can
 redistribute it and/or modify it under the same terms as Perl itself.
-
-Thanks go to the other PerlUnit framework people: 
-Brian Ewins, Cayte Lindner, J.E. Fritz, Zhon Johansen.
 
 =head1 SEE ALSO
 

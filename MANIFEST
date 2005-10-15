@@ -1,22 +1,20 @@
 AUTHORS
 ChangeLog
 Changes
-MANIFEST
-Makefile.PL
-README
-TestLister.pl
-TestRunner.pl
-TkTestRunner.pl
-doc/TODO
+COPYING.Artistic
+COPYING.GPL-2
+doc/class-diagram.dia
+doc/class-diagram.png
+doc/class-diagram.txt
 doc/consensus.txt
 doc/release-checklist
+doc/TODO
 examples/Experimental/Sample.pm
-examples/README
 examples/fail_example.pm
 examples/patch100132
 examples/patch100132-1
 examples/patch100132-2
-examples/tester.pl
+examples/README
 examples/tester.png
 lib/Test/Unit.pm
 lib/Test/Unit/Assert.pm
@@ -46,6 +44,9 @@ lib/Test/Unit/TkTestRunner.pm
 lib/Test/Unit/Tutorial.pm
 lib/Test/Unit/UnitHarness.pm
 lib/Test/Unit/Warning.pm
+Makefile.PL
+MANIFEST
+README
 t/all_tests.t
 t/assert.t
 t/tlib/ActiveTestTest.pm
@@ -55,6 +56,7 @@ t/tlib/BadSuite/BadUse.pm
 t/tlib/BadSuite/SyntaxError.pm
 t/tlib/BadSuitesTest.pm
 t/tlib/ExceptionChecker.pm
+t/tlib/FilteredSuite.pm
 t/tlib/InheritedInheritedTestCase.pm
 t/tlib/InheritedSuite/OverrideNew.pm
 t/tlib/InheritedSuite/OverrideNewName.pm
@@ -66,6 +68,7 @@ t/tlib/NoTestCaseClass.pm
 t/tlib/NoTestCases.pm
 t/tlib/OneTestCase.pm
 t/tlib/OverrideTestCase.pm
+t/tlib/RunnerTest.pm
 t/tlib/Success.pm
 t/tlib/SuiteTest.pm
 t/tlib/TestAssertionCodeRef.pm
@@ -75,3 +78,7 @@ t/tlib/TornDown.pm
 t/tlib/WasRun.pm
 t/tlib/WillDie.pm
 t/try_examples.t
+TestLister.pl
+TestRunner.pl
+TkTestRunner.pl
+META.yml                                 Module meta-data (added by MakeMaker)

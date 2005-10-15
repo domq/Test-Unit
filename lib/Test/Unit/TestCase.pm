@@ -372,10 +372,16 @@ to use persistent data you'll have to use package lexicals or globals.
 If you only need to restrict which tests are run, there is a filtering
 mechanism available.  Override the C<filter()> method in your testcase
 class to return a hashref whose keys are filter tokens and whose
-values are arrayrefs of test method names, e.g.
+values are either arrayrefs of test method names or coderefs which take
+the method name as the sole parameter and return true if and only if it
+should be filtered, e.g.
 
   sub filter {{
       slow => [ qw(my_slow_test my_really_slow_test) ],
+      matching_foo => sub {
+          my $method = shift;
+          return $method =~ /foo/;
+      }
   }}
 
 Then, set the filter state in your runner before the test run starts:
@@ -394,22 +400,12 @@ There's bound to be others.
 
 =head1 AUTHOR
 
-Framework JUnit authored by Kent Beck and Erich Gamma.
-
-Ported from Java to Perl by Christian Lemburg.
-
-Copyright (c) 2000 Christian Lemburg, E<lt>lemburg@acm.orgE<gt>.
+Copyright (c) 2000-2002, 2005 the PerlUnit Development Team
+(see L<Test::Unit> or the F<AUTHORS> file included in this
+distribution).
 
 All rights reserved. This program is free software; you can
 redistribute it and/or modify it under the same terms as Perl itself.
-
-Thanks go to the other PerlUnit framework people: 
-Brian Ewins, Cayte Lindner, J.E. Fritz, Zhon Johansen.
-
-Thanks for patches go to:
-Matthew Astley.
-
-More changes made by Piers Cawley <pdcawley@iterative-software.com>
 
 =head1 SEE ALSO
 

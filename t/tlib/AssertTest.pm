@@ -14,16 +14,42 @@ use Class::Inner;
 use vars qw/@ISA/;
 @ISA = qw(Test::Unit::TestCase ExceptionChecker);
 
-sub assertion_has_failed {
-    my $error = shift;
-    return eval {ref($error) && $error->isa('Test::Unit::Failure')};
-}
 
 sub test_assert_equals {
     my $self = shift;
     my $o = TestObject->new();
     $self->assert_equals($o, $o);
+
+    $self->check_failures
+      ("expected 'start o:MyClass=HASH(0x1404343f0) | any o:MyClass=HASH(0x1404343f0) e:start | any o:MyClass=HASH(0x1404343f0) e:in', got 'start o: e: | any o:start e: | any o:in e:'" =>
+       # A false-negative that burned me; problem with is_numeric
+       # Test must be all on one line
+       [ __LINE__, sub { shift->assert_equals("start o:MyClass=HASH(0x1404343f0) | any o:MyClass=HASH(0x1404343f0) e:start | any o:MyClass=HASH(0x1404343f0) e:in", "start o: e: | any o:start e: | any o:in e:"); } ],
+      );
 }
+
+# ...and the root of that problem in test_assert_equals
+sub test_numericness {
+    my $self = shift;
+    my %tests =
+      ( 1	=> 't',
+	0	=> 't',
+  	'0xF00'	=> 'f', # controversial?  but if you +=10 then it's == 10
+	'15e7'	=> 't',
+	'15E7'	=> 't',
+	"not 0"	=> 'f',
+	"not 4"	=> 'f',
+	"  \n 5E2"	=> 't',
+	"  \t 0E0  "	=> 't',
+      );
+    foreach my $str (keys %tests) {
+	my $expect = $tests{$str};
+	my $actual = Test::Unit::Assert::is_numeric($str) ? 't' : 'f';
+	$self->fail("For string '$str', expect $expect but got $actual")
+	  unless $expect eq $actual;
+    }
+}
+
 
 sub test_assert {
     my $self = shift;
@@ -144,6 +170,11 @@ sub test_assert_equals_null {
     my $self = shift;
     $self->assert_equals(undef, undef);
 }
+
+# sub assertion_has_failed {
+#     my $error = shift;
+#     return eval {ref($error) && $error->isa('Test::Unit::Failure')};
+# }
 
 # Not sure this has meaning in Perl
 #  sub test_assert_null_not_equals_null {
@@ -314,6 +345,10 @@ sub test_fail_assert_not_null {
     $self->check_failures(
         '<undef> unexpected'
           => [ __LINE__, sub { shift->assert_not_null(undef) } ],
+        '<undef> unexpected'
+          => [ __LINE__, sub { shift->assert_not_null() } ],
+	  # nb. $self->assert_not_null(@emptylist, "message") is not
+	  # going to do what you expected!
         'Weirdness'
           => [ __LINE__, sub { shift->assert_not_null(undef, 'Weirdness') } ]
     );
@@ -369,9 +404,48 @@ sub test_assert_deep_equals {
     my $differ = sub {
         my ($a, $b) = @_;
         qr/^Structures\ begin\ differing\ at: $ \n
-           \s* \$a .* = .* $a      .* $ \n
-           \s* \$b .* = .* $b/mx;
+        \S*\s* \$a .* = .* (?-x:$a)      .* $ \n
+        \S*\s* \$b .* = .* (?-x:$b)/mx;
     };
+
+    my %families; # key=test-purpose, value=assorted circular structures
+    foreach my $key (qw(orig copy bad_copy)) {
+	my %family = ( john => { name => 'John Doe',
+				 spouse => undef,
+				 children => [],
+			       },
+		       jane => { name   => 'Jane Doe',
+				 spouse => undef,
+				 children => [],
+			       },
+		       baby => { name => 'Baby Doll',
+#				 spouse => undef,
+				 children => [],
+			       },
+		     );
+	$family{john}{spouse} = $family{jane};
+	$family{jane}{spouse} = $family{john};
+	push @{$family{john}{children}}, $family{baby};
+	push @{$family{jane}{children}}, $family{baby};
+	$families{$key} = \%family;
+    }
+    $families{bad_copy}->{jane}{spouse} = $families{bad_copy}->{baby}; # was ->{john}
+
+    # Breakage under test is infinite recursion, to memory exhaustion!
+    # Jump through hoops to avoid killing people's boxes
+    {
+	my $old_isa = \&UNIVERSAL::isa;
+	# Pick on isa() because it'll be called from any deep-ing code
+	local $^W = 0;
+	local *UNIVERSAL::isa = sub {
+	    die "Giving up on deep recursion for assert_deep_equals"
+	      if defined caller(500);
+	    return $old_isa->(@_);
+	};
+	$self->assert_deep_equals($families{orig}, $families{copy});
+    }
+
+    my ($H, $H2, $G) = qw(hello hello goodbye);
 
     my @pairs = (
         'Both arguments were not references' => [ undef, 0 ],
@@ -379,10 +453,17 @@ sub test_assert_deep_equals {
         'Both arguments were not references' => [ 0, 1     ],
         'Both arguments were not references' => [ 0, ''    ],
         'Both arguments were not references' => [ '', 0    ],
-         $differ->(qw/ARRAY HASH/)     => [ [],      {}      ],
-         $differ->(qw/ARRAY HASH/)     => [ [1,2],   {1,2}   ],
-         $differ->('not\ exist', "'3'") => [ [1,2],   [1,2,3] ],
-         $differ->("'3'", 'not\ exist') => [ [1,2,3], [1,2]   ],
+         $differ->(qw/'ARRAY 'HASH/)     => [ [],      {}      ],
+         $differ->(qw/'ARRAY 'HASH/)     => [ [1,2],   {1,2}   ],
+	 $differ->( "'ARRAY", " undef" ) => [ { 'test' => []},
+					      { 'test' => undef } ],
+	 $differ->( "'ARRAY", 'not exist' ) => [ { 'test' => []}, {} ],
+	 $differ->( 'undef', "'ARRAY" ) => [ { 'test' => undef },
+					     { 'test' => []} ],
+	 $differ->( "''", " undef" ) => [ [ '' ], [ undef ] ],
+	 $differ->( "'undef'", " undef" ) => [ [ 'undef' ], [ undef ] ],
+         $differ->('not exist', "'3'") => [ [1,2],   [1,2,3] ],
+         $differ->("'3'", "not exist") => [ [1,2,3], [1,2]   ],
          $differ->("'wahhhhh'", "'wahhhh'") => [
              $complex,
              {
@@ -398,6 +479,10 @@ sub test_assert_deep_equals {
                  },
              }
          ],
+	 $differ->( 'HASH', 'not exist') => [$families{orig}, $families{bad_copy}], # test may be fragile due to recursion ordering?
+	 $differ->("'3'", "'5'") => [ [ \$H, 3 ], [ \$H2, 5 ] ],
+	 $differ->("'hello'", "'goodbye'") => [ { world => \$H }, { world => \$G } ],
+	 $differ->("'hello'", "'goodbye'") => [ [ \$H, "world" ], [ \$G, "world" ] ],
     );
 
     my @tests = ();

@@ -111,7 +111,7 @@ sub multi_assert {
 sub is_numeric {
     my $str = shift;
     local $^W;
-    return defined $str && ! ($str == 0 && $str !~ /[+-]?0(e0)?/);
+    return defined $str && ! ($str == 0 && $str !~ /^\s*[+-]?0(e0)?\s*$/i);
 }
 
 # First argument determines the comparison type.
@@ -219,6 +219,7 @@ sub assert_not_equals {
 }
 
 # Shamelessly pinched from Test::More and adapted to Test::Unit.
+our %Seen_Refs = ();
 our @Data_Stack;
 my $DNE = bless [], 'Does::Not::Exist';
 sub assert_deep_equals {
@@ -236,22 +237,34 @@ sub assert_deep_equals {
     }
 
     local @Data_Stack = ();
+    local %Seen_Refs = ();
     if (! $self->_deep_check($this, $that)) {
         Test::Unit::Failure->throw(
             -text => @_ ? join('', @_)
                         : $self->_format_stack(@Data_Stack)
         );
     }
-}    
+}
 
 sub _deep_check {
     my $self = shift;
     my ($e1, $e2) = @_;
 
-    # Quiet uninitialized value warnings when comparing undefs.
-    local $^W = 0; 
+    if ( ! defined $e1 || ! defined $e2 ) {
+        return 1 if !defined $e1 && !defined $e2;
+        push @Data_Stack, { vals => [$e1, $e2] };
+        return 0;
+    }
+
+    return 0 if ( (defined $e1 && $e1 eq $DNE)
+                  || (defined $e2 && $e2 eq $DNE ));
 
     return 1 if $e1 eq $e2;
+    if ( ref $e1 && ref $e2 ) {
+        my $e2_ref = "$e2";
+        return 1 if defined $Seen_Refs{$e1} && $Seen_Refs{$e1} eq $e2_ref;
+        $Seen_Refs{$e1} = $e2_ref;
+    }
 
     if (UNIVERSAL::isa($e1, 'ARRAY') and UNIVERSAL::isa($e2, 'ARRAY')) {
         return $self->_eq_array($e1, $e2);
@@ -267,7 +280,7 @@ sub _deep_check {
     }
     elsif (UNIVERSAL::isa($e1, 'SCALAR') and UNIVERSAL::isa($e2, 'SCALAR')) {
         push @Data_Stack, { type => 'REF', vals => [$e1, $e2] };
-        return _deep_check($$e1, $$e2);
+        return $self->_deep_check($$e1, $$e2);
     }
     else {
         push @Data_Stack, { vals => [$e1, $e2] };
@@ -666,21 +679,14 @@ Simulates the behaviour of the L<Test|Test> module.  B<Deprecated.>
 
 =back
 
-=head1 AUTHORS
+=head1 AUTHOR
 
-Copyright (c) 2000 Christian Lemburg, E<lt>lemburg@acm.orgE<gt>.
+Copyright (c) 2000-2002, 2005 the PerlUnit Development Team
+(see L<Test::Unit> or the F<AUTHORS> file included in this
+distribution).
 
 All rights reserved. This program is free software; you can
 redistribute it and/or modify it under the same terms as Perl itself.
-
-Thanks go to the other PerlUnit framework people: 
-Brian Ewins, Cayte Lindner, J.E. Fritz, Zhon Johansen.
-
-Thanks for patches go to:
-Matthew Astley, David Esposito, Piers Cawley.
-
-Thanks for the deep structure comparison routines to Michael Schwern
-and the other Test::More folk.
 
 =head1 SEE ALSO
 

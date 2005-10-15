@@ -6,24 +6,11 @@ use strict;
 
 use base qw(Test::Unit::Runner);
 
-use constant COPYRIGHT_NOTICE => <<'END_COPYRIGHT_NOTICE';
-This the PerlUnit Tk Test Runner. 
-Copyright (C) 2000 Christian Lemburg, Brian Ewins,
-Cayte Lindner, J. E. Fritz, Zhon Johansen.
-
-PerlUnit is a Unit Testing framework based on JUnit.
-See http://c2.com/cgi/wiki?TestingFrameworks
-
-PerlUnit is free software, redistributable under the
-same terms as Perl.
-
-$Id: TkTestRunner.pm,v 1.18 2002/06/10 15:19:00 adamspiers Exp $
-END_COPYRIGHT_NOTICE
-
 use Tk;
 use Tk::BrowseEntry;
 use Benchmark;
 
+use Test::Unit; # for copyright & version number
 use Test::Unit::Result;
 use Test::Unit::Loader;
 
@@ -39,7 +26,7 @@ sub about {
         -buttons => [ 'OK' ]
     );
     my $text = $dialog->add("ROText"); #, -width => 80, -height => 20);
-    $text->insert("end", COPYRIGHT_NOTICE);
+    $text->insert("end", Test::Unit::COPYRIGHT_NOTICE);
     $text->pack();
     $dialog->Show();
 }
@@ -392,8 +379,17 @@ sub show_error_trace {
     );
     my $selected = $self->{failure_list}->curselection;
     return unless defined($selected) && $self->{exceptions}[$selected];
-    my $text = $dialog->add("Scrolled", "ROText", -width => 80, -height => 20)->pack;
+    my $text = $dialog->add("Scrolled", "ROText", -width => 80, -height => 20)
+      ->pack(-expand => 1, -fill => 'both');
     $text->insert("end", $self->{exceptions}[$selected]->to_string());
+
+    my $e = $self->{exceptions}[$selected];
+    if ($e->object->annotations()) {
+	foreach my $data ("\n\nAnnotations:\n", $e->object->annotations()) {
+	    $text->insert("end", $data); # third arg would be a tag
+	}
+    }
+
     $dialog->Show();
 }
 
@@ -656,18 +652,12 @@ the tests to be run.
 
 =head1 AUTHOR
 
-Framework JUnit authored by Kent Beck and Erich Gamma.
-
-Copyright (c) 2000 Brian Ewins.
+Copyright (c) 2000-2002, 2005 the PerlUnit Development Team
+(see L<Test::Unit> or the F<AUTHORS> file included in this
+distribution).
 
 All rights reserved. This program is free software; you can
 redistribute it and/or modify it under the same terms as Perl itself.
-
-Thanks go to the other PerlUnit framework people: 
-Christian Lemburg, Cayte Lindner, J.E. Fritz, Zhon Johansen.
-
-Thanks for patches go to:
-David Esposito.
 
 =head1 SEE ALSO
 

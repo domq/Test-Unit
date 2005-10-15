@@ -3,7 +3,7 @@ use strict;
 
 use base qw(Test::Unit::Runner); 
 
-use Test::Unit; # for the version number
+use Test::Unit; # for copyright & version number
 use Test::Unit::TestSuite;
 use Test::Unit::Loader;
 use Test::Unit::Result;
@@ -170,10 +170,7 @@ sub start {
         if ($args[$i] eq "-wait") {
             $wait = 1;
         } elsif ($args[$i] eq "-v") {
-            print <<EOF;
-Test::Unit Version $Test::Unit::VERSION
-(c) 2000 Christian Lemburg, Brian Ewins, J.E. Fritz, Cayte Lindner, Zhon Johansen
-EOF
+	    print Test::Unit::COPYRIGHT_SHORT;
         } else {
             $test = $args[$i];
         }
@@ -235,17 +232,12 @@ version info
 
 =head1 AUTHOR
 
-Framework JUnit authored by Kent Beck and Erich Gamma.
-
-Ported from Java to Perl by Christian Lemburg.
-
-Copyright (c) 2000 Christian Lemburg, E<lt>lemburg@acm.orgE<gt>.
+Copyright (c) 2000-2002, 2005 the PerlUnit Development Team
+(see L<Test::Unit> or the F<AUTHORS> file included in this
+distribution).
 
 All rights reserved. This program is free software; you can
 redistribute it and/or modify it under the same terms as Perl itself.
-
-Thanks go to the other PerlUnit framework people: 
-Brian Ewins, Cayte Lindner, J.E. Fritz, Zhon Johansen.
 
 =head1 SEE ALSO
 
