@@ -1,6 +1,9 @@
 #!/usr/bin/perl -w
 
 package Test::Unit::TkTestRunner;
+BEGIN {
+  $Test::Unit::TkTestRunner::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 
 use strict;
 
@@ -378,6 +381,10 @@ sub show_error_trace {
         -buttons => [ 'OK' ]
     );
     my $selected = $self->{failure_list}->curselection;
+    if (ref($selected) eq 'ARRAY') {
+	# new Tk returns array of int...?
+	($selected) = @$selected; # take the first, ignore the rest
+    }
     return unless defined($selected) && $self->{exceptions}[$selected];
     my $text = $dialog->add("Scrolled", "ROText", -width => 80, -height => 20)
       ->pack(-expand => 1, -fill => 'both');

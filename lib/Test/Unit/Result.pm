@@ -1,4 +1,7 @@
 package Test::Unit::Result;
+BEGIN {
+  $Test::Unit::Result::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 use strict;
 
 use Test::Unit::Debug qw(debug);

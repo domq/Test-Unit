@@ -1,4 +1,7 @@
 package Test::Unit::Warning;
+BEGIN {
+  $Test::Unit::Warning::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 
 use strict;
 use base 'Test::Unit::TestCase';

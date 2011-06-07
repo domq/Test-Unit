@@ -1,4 +1,7 @@
 package Test::Unit::TestSuite;
+BEGIN {
+  $Test::Unit::TestSuite::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 use strict;
 
 =head1 NAME

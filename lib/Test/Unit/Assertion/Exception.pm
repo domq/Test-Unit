@@ -1,4 +1,7 @@
 package Test::Unit::Assertion::Exception;
+BEGIN {
+  $Test::Unit::Assertion::Exception::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 
 use strict;
 use base qw/Test::Unit::Assertion/;
@@ -12,7 +15,13 @@ my $deparser;
 sub new {
     my $class = shift;
     my $exception_class = shift;
-    croak "$class\::new needs an exception class" unless $exception_class;
+
+    my $prob;
+    $prob = "none given" unless defined $exception_class;
+    $prob = "$exception_class has no catch method"
+      unless UNIVERSAL::can($exception_class, "catch");
+    croak "$class\::new needs an exception class - $prob" if $prob;
+
     bless \$exception_class => $class;
 }
 

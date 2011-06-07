@@ -1,4 +1,7 @@
 package Test::Unit::Procedural;
+BEGIN {
+  $Test::Unit::Procedural::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 
 use strict;
 

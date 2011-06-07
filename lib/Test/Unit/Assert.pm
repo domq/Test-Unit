@@ -1,4 +1,7 @@
 package Test::Unit::Assert;
+BEGIN {
+  $Test::Unit::Assert::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 
 
 use strict;
@@ -111,6 +114,14 @@ sub multi_assert {
 sub is_numeric {
     my $str = shift;
     local $^W;
+
+    if (defined $str && $str =~ /^0x[A-Fa-f0-9]/) {
+	# This is harsh but anything else risks brushing a problem
+	# under the carpet.  Best to make the caller to review the
+	# situation and maintain the test code.
+	die "Testing '$str' for is_numeric is ambiguous.  It may give different results on various platform combinations - this is a liability for testing so we barfed";
+    }
+
     return defined $str && ! ($str == 0 && $str !~ /^\s*[+-]?0(e0)?\s*$/i);
 }
 
@@ -483,6 +494,57 @@ sub _format_stack {
               Test::Unit::Failure->throw
                   (-text => @_ ? join('', @_) : "<undef> unexpected");
         },
+        isa   => sub {
+            my $class = shift;
+            my $obj = shift;
+            defined $class or
+              Test::Unit::Error->throw(
+                  -text => @_ ? join('',@_) :
+                    "expected classname was undef; should be using assert_null?"
+              );
+	    ref($class) eq "" or
+	      Test::Unit::Error->throw
+		  (-text => @_ ? join('',@_) : "expected classname was a reference; args swapped?");
+            defined $obj or
+              Test::Unit::Failure->throw(
+                  -text => @_ ? join('',@_) : "expected class '$class', got undef"
+              );
+	    ref($obj) ne "" or
+	      Test::Unit::Failure->throw
+		  (-text => @_ ? join('',@_) : "expected class '$class', got non-reference");
+	    ref($obj) !~ /^(SCALAR|ARRAY|HASH|CODE|REF|GLOB|LVALUE|Regexp)$/ or
+              Test::Unit::Failure->throw(
+                  -text => @_ ? join('',@_) : "expected class '$class', got unblessed reference"
+              );
+            $obj->isa($class) or
+              Test::Unit::Failure->throw(
+                  -text => @_ ? join('',@_) : "expected object of class '$class', got '".ref($obj)."'"
+              );
+        },
+        can   => sub {
+            my $method = shift;
+            my $obj = shift;
+            defined $method or
+              Test::Unit::Error->throw(
+                  -text => @_ ? join('',@_) :
+                    "expected method name was undef; should be using assert_null?"
+              );
+	    ref($method) eq "" or
+	      Test::Unit::Error->throw
+		  (-text => @_ ? join ('',@_) : "expected method name was a reference; args swapped?");
+            defined $obj or
+              Test::Unit::Failure->throw(
+                  -text => @_ ? join('',@_) : "expected object that can '$method', got undef"
+              );
+            (ref($obj) && ref($obj) !~ /^(SCALAR|ARRAY|HASH|CODE|REF|GLOB|LVALUE|Regexp)$/) or
+              Test::Unit::Failure->throw(
+                  -text => @_ ? join('',@_) : "expected object that can '$method', got non-object"
+              );
+            $obj->can($method) or
+              Test::Unit::Failure->throw(
+                  -text => @_ ? join('',@_) : "expected object that can '$method', but it cannot"
+              );
+        },
     );
     foreach my $type (keys %assert_subs) {
         my $assertion = Test::Unit::Assertion::CodeRef->new($assert_subs{$type});
@@ -556,7 +618,7 @@ Test::Unit::Assert - unit testing framework assertion class
     $self->assert(sub {
                       $_[0] == $_[1]
                         or $self->fail("Expected $_[0], got $_[1]");
-                  }, 1, 2); 
+                  }, 1, 2);
 
     # or, for old style regular expression comparisons
     # (strongly deprecated; see warning below)
@@ -578,13 +640,17 @@ Test::Unit::Assert - unit testing framework assertion class
     $self->assert_null(undef);
     $self->assert_not_null('');
 
+    # assert object properties
+    $self->assert_isa('Horse', $object);
+    $self->assert_can('gallop', $object);
+
 =head1 DESCRIPTION
 
 This class contains the various standard assertions used within the
 framework. With the exception of the C<assert(CODEREF, @ARGS)>, all
 the assertion methods take an optional message after the mandatory
 fields. The message can either be a single string, or a list, which
-will get concatenated. 
+will get concatenated.
 
 Although you can specify a message, it is hoped that the default error
 messages generated when an assertion fails will be good enough for
@@ -640,7 +706,16 @@ quite sure what will happen with filehandles.
 
 Assert that ARG is defined or not defined.
 
-=item assert(BOOLEAN [, MESSAGE]) 
+=item assert_isa(CLASS, OBJECT [, MESSAGE])
+
+=item assert_can(METHOD, OBJECT [, MESSAGE])
+
+Assert that OBJECT belongs to a CLASS or can execute a METHOD.
+
+Note that C<assert_can> is subject to the same restrictions as the
+built-in C<can>, particularly for AUTOLOADed methods.
+
+=item assert(BOOLEAN [, MESSAGE])
 
 Checks if the BOOLEAN expression returns a true value that is neither
 a CODE ref nor a REGEXP.  Note that MESSAGE is almost non optional in
@@ -667,7 +742,7 @@ throws Test::Unit::Failure)
 =item assert_raises(EXCEPTION_CLASS, CODEREF [, MESSAGE])
 
 Calls CODEREF->().  Assertion fails unless an exception of class
-EXCEPTION_CLASS is raised.
+EXCEPTION_CLASS is raised.  Error if EXCEPTION_CLASS cannot C<catch>.
 
 =item multi_assert(ASSERTION, @ARGSETS)
 

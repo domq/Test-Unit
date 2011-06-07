@@ -1,4 +1,7 @@
 package Test::Unit::Assertion::Regexp;
+BEGIN {
+  $Test::Unit::Assertion::Regexp::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 
 use strict;
 use Test::Unit::Assertion;

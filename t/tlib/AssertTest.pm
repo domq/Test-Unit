@@ -34,7 +34,8 @@ sub test_numericness {
     my %tests =
       ( 1	=> 't',
 	0	=> 't',
-  	'0xF00'	=> 'f', # controversial?  but if you +=10 then it's == 10
+## deal with this below
+#  	'0xF00'	=> 'f', # controversial?  but if you +=10 then it's == 10
 	'15e7'	=> 't',
 	'15E7'	=> 't',
 	"not 0"	=> 'f',
@@ -48,6 +49,21 @@ sub test_numericness {
 	$self->fail("For string '$str', expect $expect but got $actual")
 	  unless $expect eq $actual;
     }
+
+    my @broken =
+      (sub { my $ret = Test::Unit::Assert::is_numeric("0xF00"); die "Returned '$ret'" },
+       sub { $self->assert_equals("0xF00",  "0x514") },
+       sub { $self->assert_equals("0xBEEF", "junk") },
+       sub { $self->assert_not_equals("0xDEAD", "57005"); die "It did a numeric comparison" },
+      );
+    # loop below is basically an ->assert_dies(qr, @broken) call
+    for (my $i=0; $i<@broken; $i++) {
+	my $ret = eval { $broken[$i]->() };
+	my $err = $@ || "Returned '$ret'";
+	$self->assert_matches(qr{ is ambiguous}, $err);
+	$self->assert_null($ret);
+    }
+    $self->assert_not_equals("junk", "0xBEEF");
 }
 
 
@@ -156,7 +172,7 @@ sub test_assert_matches {
             => [ __LINE__, sub { shift->assert_matches(1, 2) } ]
     );
 }
-    
+
 sub test_assert_does_not_match {
     my $self = shift;
     $self->assert_does_not_match(qr/ob/, 'fooBar');
@@ -363,6 +379,63 @@ sub test_succeed_assert_not_null {
     $self->assert_not_null(10);
 }
 
+sub test_succeed_assert_isa {
+    my $self = shift;
+    $self->assert_isa('TestObject', TestObject->new);
+    $self->assert_isa('Test::Unit::TestCase', $self);
+    $self->assert_isa(AssertTest => $self);
+## it's not in the spec so don't test it
+#    $self->assert_isa('Test::Unit::TestCase', 'AssertTest'); # assert_isa('Superclass', 'Class') currently fails
+}
+
+sub test_fail_assert_isa {
+    my $self = shift;
+    $self->check_errors(
+        "expected classname was undef; should be using assert_null?"
+          => [ __LINE__, sub { shift->assert_isa(undef, 'FooBar') } ],
+        "expected classname was a reference; args swapped?"
+          => [ __LINE__, sub { shift->assert_isa(TestObject->new, 'TestObject') } ],
+    );
+    $self->check_failures(
+        "expected class 'FooBar', got undef"
+          => [ __LINE__, sub { shift->assert_isa('FooBar', undef) } ],
+        "expected class 'FooBar', got non-reference"
+          => [ __LINE__, sub { shift->assert_isa('FooBar', 123) } ],
+        "expected class 'FooBar', got unblessed reference"
+          => [ __LINE__, sub { shift->assert_isa('FooBar', [ qw( 1 2 3) ]) } ],
+        "expected object of class 'FooBar', got 'TestObject'"
+          => [ __LINE__, sub { shift->assert_isa('FooBar', TestObject->new) } ],
+    );
+}
+
+sub test_succeed_assert_can {
+    my $self = shift;
+    $self->assert_can('new', TestObject->new);
+    $self->assert_can(test_succeed_assert_can => $self);
+## it's not in the spec so don't test it
+#    $self->assert_can(test_succeed_assert_can => 'AssertTest'); # assert_can('method', 'Class') currently fails
+}
+
+sub test_fail_assert_can {
+    my $self = shift;
+    $self->check_errors
+      ("expected method name was undef; should be using assert_null?"
+       => [ __LINE__, sub { shift->assert_can(undef, 'FooBar') } ],
+       "expected method name was a reference; args swapped?"
+       => [ __LINE__, sub { shift->assert_can(TestObject->new, 'new') } ],
+      );
+    $self->check_failures(
+        "expected object that can 'FooBar', got undef"
+          => [ __LINE__, sub { shift->assert_can('FooBar', undef) } ],
+        "expected object that can 'FooBar', got non-object"
+          => [ __LINE__, sub { shift->assert_can('FooBar', 123) } ],
+        "expected object that can 'FooBar', got non-object"
+          => [ __LINE__, sub { shift->assert_can('FooBar', [ qw( 1 2 3) ]) } ],
+        "expected object that can 'blah', but it cannot"
+          => [ __LINE__, sub { shift->assert_can('blah', TestObject->new) } ],
+    );
+}
+
 sub test_assert_deep_equals {
     my $self = shift;
 
@@ -496,6 +569,24 @@ sub test_assert_deep_equals {
                                                      "$expected with comment") } ];
     }
     $self->check_failures(@tests);
+}
+
+# Pasted direct from SF bug #1012115
+# should have been incorporated above...
+sub test_deepequals_scalarrefs {
+    my $self = shift;
+    my ($H, $G) = ("hello", "goodbye");
+    my $a = [ \$H, "world" ];
+    my $b = [ \$G, "world" ];
+    # comparison should fail on list item 0, and tell us what they were
+    eval {
+        $self->assert_deep_equals($a, $b);
+    };
+    my $err = $@;
+    $self->fail("comparison should fail") unless $err;
+    $err =~ s/^/> /mg; # indent for clarity
+    $self->assert_matches(qr/hello/, $err);
+    $self->assert_matches(qr/goodbye/, $err);
 }
 
 # Key = assert_method

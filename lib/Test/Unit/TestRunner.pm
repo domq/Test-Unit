@@ -1,4 +1,7 @@
 package Test::Unit::TestRunner;
+BEGIN {
+  $Test::Unit::TestRunner::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 use strict;
 
 use base qw(Test::Unit::Runner); 

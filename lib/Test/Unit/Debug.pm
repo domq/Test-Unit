@@ -1,4 +1,7 @@
 package Test::Unit::Debug;
+BEGIN {
+  $Test::Unit::Debug::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 
 =head1 NAME
 

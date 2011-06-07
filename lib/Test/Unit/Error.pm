@@ -1,4 +1,7 @@
 package Test::Unit::Error;
+BEGIN {
+  $Test::Unit::Error::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 use strict;
 use base qw(Test::Unit::Exception);
 

@@ -1,4 +1,7 @@
 package Test::Unit::Listener;
+BEGIN {
+  $Test::Unit::Listener::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 use Test::Unit::Loader;
 use Carp;
 use strict;

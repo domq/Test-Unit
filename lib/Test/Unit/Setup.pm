@@ -1,4 +1,7 @@
 package Test::Unit::Setup;
+BEGIN {
+  $Test::Unit::Setup::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 use strict;
 
 use base qw(Test::Unit::Decorator);

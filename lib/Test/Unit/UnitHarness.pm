@@ -1,6 +1,9 @@
 # This is a makeover of Test::Harness to allow its tests
 # to be retrofitted as unit tests.
 package Test::Unit::UnitHarness;
+BEGIN {
+  $Test::Unit::UnitHarness::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+}
 
 BEGIN {require 5.002;}
 use base qw(Test::Unit::Runner Test::Unit::Test Exporter);
@@ -20,7 +23,10 @@ use vars qw($VERSION $verbose $switches $have_devel_corestack $curtest
             @EXPORT @EXPORT_OK);
 $have_devel_corestack = 0;
 
-$VERSION = "1.1502";
+# This file was derived from a v1.1502, but that is not the current
+# version number
+#
+# $VERSION = "1.1502";
 
 @EXPORT = qw(&runtests);
 @EXPORT_OK = qw($verbose $switches);
