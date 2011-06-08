@@ -1,6 +1,6 @@
 package Test::Unit::Assert;
 BEGIN {
-  $Test::Unit::Assert::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+  $Test::Unit::Assert::VERSION = '0.25_1325'; # added by dist-tools/SetVersion.pl
 }
 
 

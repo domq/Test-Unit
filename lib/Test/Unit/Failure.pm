@@ -1,6 +1,6 @@
 package Test::Unit::Failure;
 BEGIN {
-  $Test::Unit::Failure::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+  $Test::Unit::Failure::VERSION = '0.25_1325'; # added by dist-tools/SetVersion.pl
 }
 use strict;
 use base qw(Test::Unit::Exception);

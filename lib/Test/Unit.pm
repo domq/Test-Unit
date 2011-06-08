@@ -88,7 +88,7 @@ to do with it.
 
 package Test::Unit;
 BEGIN {
-  $Test::Unit::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+  $Test::Unit::VERSION = '0.25_1325'; # added by dist-tools/SetVersion.pl
 }
 
 use strict;

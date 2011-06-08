@@ -2,7 +2,7 @@
 # to be retrofitted as unit tests.
 package Test::Unit::UnitHarness;
 BEGIN {
-  $Test::Unit::UnitHarness::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+  $Test::Unit::UnitHarness::VERSION = '0.25_1325'; # added by dist-tools/SetVersion.pl
 }
 
 BEGIN {require 5.002;}

@@ -1,6 +1,6 @@
 package Test::Unit::Warning;
 BEGIN {
-  $Test::Unit::Warning::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+  $Test::Unit::Warning::VERSION = '0.25_1325'; # added by dist-tools/SetVersion.pl
 }
 
 use strict;

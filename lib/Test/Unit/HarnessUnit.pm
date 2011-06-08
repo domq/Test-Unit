@@ -1,6 +1,6 @@
 package Test::Unit::HarnessUnit;
 BEGIN {
-  $Test::Unit::HarnessUnit::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+  $Test::Unit::HarnessUnit::VERSION = '0.25_1325'; # added by dist-tools/SetVersion.pl
 }
 # this is a test runner which outputs in the same
 # format that Test::Harness expects. 

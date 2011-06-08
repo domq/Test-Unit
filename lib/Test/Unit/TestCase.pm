@@ -1,6 +1,6 @@
 package Test::Unit::TestCase;
 BEGIN {
-  $Test::Unit::TestCase::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+  $Test::Unit::TestCase::VERSION = '0.25_1325'; # added by dist-tools/SetVersion.pl
 }
 use strict;
 

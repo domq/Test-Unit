@@ -1,6 +1,6 @@
 package Test::Unit::Tutorial;
 BEGIN {
-  $Test::Unit::Tutorial::VERSION = '0.25_0922'; # added by dist-tools/SetVersion.pl
+  $Test::Unit::Tutorial::VERSION = '0.25_1325'; # added by dist-tools/SetVersion.pl
 }
 
 # this is only a container for the Test::Unit tutorial
